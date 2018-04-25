@@ -600,7 +600,7 @@ function! s:Move(force,destination)
   if s:buffer().commit() == ''
     return 'saveas! '.s:fnameescape(destination)
   else
-    return 'file '.s:fnameescape(s:repo.translate(':0:'.destination)
+    return 'file '.s:fnameescape(s:repo.translate(':0:'.destination))
   endif
 endfunction
 
