@@ -12,25 +12,25 @@
 
 " Utility {{{1
 
-" function! s:function(name) abort
-"   return function(substitute(a:name,'^s:',matchstr(expand('<sfile>'), '<SNR>\d\+_'),''))
-" endfunction
+function! s:function(name) abort
+  return function(substitute(a:name,'^s:',matchstr(expand('<sfile>'), '<SNR>\d\+_'),''))
+endfunction
 
-" function! s:sub(str,pat,rep) abort
-"   return substitute(a:str,'\v\C'.a:pat,a:rep,'')
-" endfunction
+function! s:sub(str,pat,rep) abort
+  return substitute(a:str,'\v\C'.a:pat,a:rep,'')
+endfunction
 
 " function! s:gsub(str,pat,rep) abort
 "   return substitute(a:str,'\v\C'.a:pat,a:rep,'g')
 " endfunction
 
-" function! s:shellesc(arg) abort
-"   if a:arg =~ '^[A-Za-z0-9_/.-]\+$'
-"     return a:arg
-"   else
-"     return shellescape(a:arg)
-"   endif
-" endfunction
+function! s:shellesc(arg) abort
+  if a:arg =~ '^[A-Za-z0-9_/.-]\+$'
+    return a:arg
+  else
+    return shellescape(a:arg)
+  endif
+endfunction
 
 " function! s:fnameescape(file) abort
 "   if exists('*fnameescape')
@@ -40,16 +40,16 @@
 "   endif
 " endfunction
 
-" function! s:throw(string) abort
-"   let v:errmsg = 'fugitive: '.a:string
-"   throw v:errmsg
-" endfunction
+function! s:throw(string) abort
+  let v:errmsg = 'fugitive: '.a:string
+  throw v:errmsg
+endfunction
 
-" function! s:add_methods(namespace, method_names) abort
-"   for name in a:method_names
-"     let s:{a:namespace}_prototype[name] = s:function('s:'.a:namespace.'_'.name)
-"   endfor
-" endfunction
+function! s:add_methods(namespace, method_names) abort
+  for name in a:method_names
+    let s:{a:namespace}_prototype[name] = s:function('s:'.a:namespace.'_'.name)
+  endfor
+endfunction
 
 " let s:commands = []
 " function! s:command(definition) abort
@@ -67,29 +67,29 @@
 "   autocmd User Fugitive call s:define_commands()
 " augroup END
 
-" let s:abstract_prototype = {}
+let s:abstract_prototype = {}
 
 " }}}1
 " Initialization {{{1
 
-" function! s:ExtractGitDir(path) abort
-"   if a:path =~? '^fugitive://.*//'
-"     return matchstr(a:path,'fugitive://\zs.\{-\}\ze//')
-"   endif
-"   let fn = fnamemodify(a:path,':s?[\/]$??')
-"   let ofn = ""
-"   let nfn = fn
-"   while fn != ofn
-"     if isdirectory(fn . '/.git')
-"       return s:sub(simplify(fnamemodify(fn . '/.git',':p')),'/$','')
-"     elseif fn =~ '\.git$' && filereadable(fn . '/HEAD')
-"       return s:sub(simplify(fnamemodify(fn,':p')),'/$','')
-"     endif
-"     let ofn = fn
-"     let fn = fnamemodify(ofn,':h')
-"   endwhile
-"   return ''
-" endfunction
+function! s:ExtractGitDir(path) abort
+  if a:path =~? '^fugitive://.*//'
+    return matchstr(a:path,'fugitive://\zs.\{-\}\ze//')
+  endif
+  let fn = fnamemodify(a:path,':s?[\/]$??')
+  let ofn = ""
+  let nfn = fn
+  while fn != ofn
+    if isdirectory(fn . '/.git')
+      return s:sub(simplify(fnamemodify(fn . '/.git',':p')),'/$','')
+    elseif fn =~ '\.git$' && filereadable(fn . '/HEAD')
+      return s:sub(simplify(fnamemodify(fn,':p')),'/$','')
+    endif
+    let ofn = fn
+    let fn = fnamemodify(ofn,':h')
+  endwhile
+  return ''
+endfunction
 
 " function! s:Detect()
 "   if !exists('b:git_dir')
@@ -113,78 +113,80 @@
 " }}}1
 " Repository {{{1
 
-" let s:repo_prototype = {}
-" let s:repos = {}
+let s:repo_prototype = {}
+let s:repos = {}
 
-" function! s:repo(...) abort
+function! s:repo(...) abort
 "   let dir = a:0 ? a:1 : (exists('b:git_dir') ? b:git_dir : s:ExtractGitDir(expand('%:p')))
-"   if dir == ''
-"     call s:throw('not a git repository: '.expand('%:p'))
-"   else
-"     if has_key(s:repos,dir)
-"       let repo = get(s:repos,dir)
-"     else
-"       let repo = {'git_dir': dir}
-"       let s:repos[dir] = repo
-"     endif
-"     return extend(extend(repo,s:repo_prototype,'keep'),s:abstract_prototype,'keep')
-"   endif
-" endfunction
+  let dir = s:ExtractGitDir(expand('%:p')) " (tmp)
+  if dir == ''
+    call s:throw('not a git repository: '.expand('%:p'))
+  else
+    if has_key(s:repos,dir)
+      let repo = get(s:repos,dir)
+    else
+      let repo = {'git_dir': dir}
+      let s:repos[dir] = repo
+    endif
+    return extend(extend(repo,s:repo_prototype,'keep'),s:abstract_prototype,'keep')
+  endif
+endfunction
 
-" function! s:repo_dir(...) dict abort
-"   return join([self.git_dir]+a:000,'/')
-" endfunction
+function! s:repo_dir(...) dict abort
+  return join([self.git_dir]+a:000,'/')
+endfunction
 
-" function! s:repo_tree(...) dict abort
-"   if self.bare()
-"     call s:throw('no work tree')
-"   else
-"     let dir = fnamemodify(self.git_dir,':h')
-"     return join([dir]+a:000,'/')
-"   endif
-" endfunction
+function! s:repo_tree(...) dict abort
+  if self.bare()
+    call s:throw('no work tree')
+  else
+    let dir = fnamemodify(self.git_dir,':h')
+    return join([dir]+a:000,'/')
+  endif
+endfunction
 
-" function! s:repo_bare() dict abort
-"   return self.dir() !~# '/\.git$'
-" endfunction
+function! s:repo_bare() dict abort
+  return self.dir() !~# '/\.git$'
+endfunction
 
-" function! s:repo_translate(spec) dict abort
-"   if a:spec ==# '.' || a:spec ==# '/.'
-"     return self.bare() ? self.dir() : self.tree()
-"   elseif a:spec =~# '^/'
-"     return fnamemodify(self.dir(),':h').a:spec
-"   elseif a:spec =~# '^:[0-3]:'
-"     return 'fugitive://'.self.dir().'//'.a:spec[1].'/'.a:spec[3:-1]
-"   elseif a:spec ==# ':'
-"     return self.dir('index')
-"   elseif a:spec =~# '^:/'
-"     let ref = self.rev_parse(matchstr(a:spec,'.[^:]*'))
-"     return 'fugitive://'.self.dir().'//'.ref
-"   elseif a:spec =~# '^:'
-"     return 'fugitive://'.self.dir().'//0/'.a:spec[1:-1]
-"   elseif a:spec =~# 'HEAD\|^refs/' && a:spec !~ ':' && filereadable(self.dir(a:spec))
-"     return self.dir(a:spec)
-"   elseif filereadable(s:repo().dir('refs/'.a:spec))
-"     return self.dir('refs/'.a:spec)
-"   elseif filereadable(s:repo().dir('refs/tags/'.a:spec))
-"     return self.dir('refs/tags/'.a:spec)
-"   elseif filereadable(s:repo().dir('refs/heads/'.a:spec))
-"     return self.dir('refs/heads/'.a:spec)
-"   elseif filereadable(s:repo().dir('refs/remotes/'.a:spec))
-"     return self.dir('refs/remotes/'.a:spec)
-"   elseif filereadable(s:repo().dir('refs/remotes/'.a:spec.'/HEAD'))
-"     return self.dir('refs/remotes/'.a:spec,'/HEAD')
-"   else
-"     try
-"       let ref = self.rev_parse(matchstr(a:spec,'[^:]*'))
-"       let path = s:sub(matchstr(a:spec,':.*'),'^:','/')
-"       return 'fugitive://'.self.dir().'//'.ref.path
-"     catch /^fugitive:/
-"       return self.tree(a:spec)
-"     endtry
-"   endif
-" endfunction
+function! s:repo_translate(spec) dict abort
+  if a:spec ==# '.' || a:spec ==# '/.'
+    return self.bare() ? self.dir() : self.tree()
+  elseif a:spec =~# '^/'
+    return fnamemodify(self.dir(),':h').a:spec
+  elseif a:spec =~# '^:[0-3]:'
+    return 'fugitive://'.self.dir().'//'.a:spec[1].'/'.a:spec[3:-1]
+  elseif a:spec ==# ':'
+    return self.dir('index')
+  elseif a:spec =~# '^:/'
+    let ref = self.rev_parse(matchstr(a:spec,'.[^:]*'))
+    return 'fugitive://'.self.dir().'//'.ref
+  elseif a:spec =~# '^:'
+    return 'fugitive://'.self.dir().'//0/'.a:spec[1:-1]
+  elseif a:spec =~# 'HEAD\|^refs/' && a:spec !~ ':' && filereadable(self.dir(a:spec))
+    return self.dir(a:spec)
+  elseif filereadable(s:repo().dir('refs/'.a:spec))
+    return self.dir('refs/'.a:spec)
+  elseif filereadable(s:repo().dir('refs/tags/'.a:spec))
+    return self.dir('refs/tags/'.a:spec)
+  elseif filereadable(s:repo().dir('refs/heads/'.a:spec))
+    return self.dir('refs/heads/'.a:spec)
+  elseif filereadable(s:repo().dir('refs/remotes/'.a:spec))
+    return self.dir('refs/remotes/'.a:spec)
+  elseif filereadable(s:repo().dir('refs/remotes/'.a:spec.'/HEAD'))
+    return self.dir('refs/remotes/'.a:spec,'/HEAD')
+  else
+    try
+      let ref = self.rev_parse(matchstr(a:spec,'[^:]*'))
+      let path = s:sub(matchstr(a:spec,':.*'),'^:','/')
+      return 'fugitive://'.self.dir().'//'.ref.path
+    catch /^fugitive:/
+      return self.tree(a:spec)
+    endtry
+  endif
+endfunction
 
+call s:add_methods('repo',['dir', 'tree', 'bare']) " (tmp)
 " call s:add_methods('repo',['dir','tree','bare','translate'])
 
 " function! s:repo_git_command(...) dict abort
@@ -278,32 +280,32 @@
 " }}}1
 " Buffer {{{1
 
-" let s:buffer_prototype = {}
+let s:buffer_prototype = {}
 
-" function! s:buffer(...) abort
-"   let buffer = {'#': bufnr(a:0 ? a:1 : '%')}
-"   call extend(extend(buffer,s:buffer_prototype,'keep'),s:abstract_prototype,'keep')
+function! s:buffer(...) abort
+  let buffer = {'#': bufnr(a:0 ? a:1 : '%')}
+  call extend(extend(buffer,s:buffer_prototype,'keep'),s:abstract_prototype,'keep')
 "   if buffer.getvar('git_dir') == ''
 "     call s:throw('not a git repository: '.expand('%:p'))
 "   endif
-"   return buffer
-" endfunction
+  return buffer
+endfunction
 
-" function! fugitive#buffer(...) abort
-"   return s:buffer(a:0 ? a:1 : '%')
-" endfunction
+function! fugitive#buffer(...) abort
+  return s:buffer(a:0 ? a:1 : '%')
+endfunction
 
-" function! s:buffer_getvar(var) dict abort
-"   return getbufvar(self['#'],a:var)
-" endfunction
+function! s:buffer_getvar(var) dict abort
+  return getbufvar(self['#'],a:var)
+endfunction
 
 " function! s:buffer_getline(lnum) dict abort
 "   return getbufline(self['#'],a:lnum)[0]
 " endfunction
 
-" function! s:buffer_repo() dict abort
-"   return s:repo(self.getvar('git_dir'))
-" endfunction
+function! s:buffer_repo() dict abort
+  return s:repo(self.getvar('git_dir'))
+endfunction
 
 " function! s:buffer_type(...) dict abort
 "   if self.getvar('fugitive_type') != ''
@@ -330,25 +332,25 @@
 "   endif
 " endfunction
 
-" function! s:buffer_name() dict abort
-"   return fnamemodify(bufname(self['#']),':p')
-" endfunction
+function! s:buffer_name() dict abort
+  return fnamemodify(bufname(self['#']),':p')
+endfunction
 
-" function! s:buffer_commit() dict abort
-"   return matchstr(self.name(),'^fugitive://.\{-\}//\zs\w*')
-" endfunction
+function! s:buffer_commit() dict abort
+  return matchstr(self.name(),'^fugitive://.\{-\}//\zs\w*')
+endfunction
 
-" function! s:buffer_path(...) dict abort
-"   let rev = matchstr(self.name(),'^fugitive://.\{-\}//\zs.*')
-"   if rev != ''
-"     let rev = s:sub(rev,'\w*','')
-"   elseif self.name() =~ '\.git/refs/\|\.git/.*HEAD$'
-"     let rev = ''
-"   else
-"     let rev = self.name()[strlen(self.repo().tree()) : -1]
-"   endif
-"   return s:sub(rev,'^/',a:0 ? a:1 : '')
-" endfunction
+function! s:buffer_path(...) dict abort
+  let rev = matchstr(self.name(),'^fugitive://.\{-\}//\zs.*')
+  if rev != ''
+    let rev = s:sub(rev,'\w*','')
+  elseif self.name() =~ '\.git/refs/\|\.git/.*HEAD$'
+    let rev = ''
+  else
+    let rev = self.name()[strlen(self.repo().tree()) : -1]
+  endif
+  return s:sub(rev,'^/',a:0 ? a:1 : '')
+endfunction
 
 " function! s:buffer_rev() dict abort
 "   let rev = matchstr(self.name(),'^fugitive://.\{-\}//\zs.*')
@@ -399,6 +401,7 @@
 "   endif
 " endfunction
 
+call s:add_methods('buffer',['getvar','repo','name','commit','path']) " (tmp)
 " call s:add_methods('buffer',['getvar','getline','repo','type','name','commit','path','rev','sha1','expand','containing_commit'])
 
 " }}}1
@@ -652,7 +655,10 @@
 "   autocmd User Fugitive if s:buffer().type('file', 'blob') | exe "command! -buffer -bar -bang -range=0 Gblame :execute s:Blame(<bang>0,<line1>,<line2>,<count>,<f-args>)" | endif
 " augroup END
 
-" function! s:Blame(bang,line1,line2,count) abort
+ " (tmp)
+command! -bar -bang -range=0 Gblame :execute s:Blame(<bang>0,<line1>,<line2>,<count>,<f-args>)
+
+function! s:Blame(bang,line1,line2,count) abort
 "   try
 "     if s:buffer().path() == ''
 "       call s:throw('file or blob required')
@@ -665,50 +671,51 @@
 "       let cmd = ['--work-tree='.s:repo().tree()] + cmd + ['--contents', '-']
 "     endif
 "     let basecmd = call(s:repo().git_command,cmd+['--',s:buffer().path()],s:repo())
+    let basecmd = 'git --no-pager blame ' . s:buffer().path() " (tmp)
 "     if a:count
 "       return 'write !'.substitute(basecmd,' blame ',' blame -L '.a:line1.','.a:line2.' ','g')
 "     else
-"       let temp = tempname().'.fugitiveblame'
-"       silent! exe '%write !'.basecmd.' > '.temp.' 2> '.temp
-"       if v:shell_error
-"         call s:throw(join(readfile(temp),"\n"))
-"       endif
-"       let bufnr = bufnr('')
-"       let restore = 'call setbufvar('.bufnr.',"&scrollbind",0)'
-"       if &l:wrap
-"         let restore .= '|call setbufvar('.bufnr.',"&wrap",1)'
-"       endif
-"       if &l:foldenable
-"         let restore .= '|call setbufvar('.bufnr.',"&foldenable",1)'
-"       endif
-"       let winnr = winnr()
-"       windo set noscrollbind
-"       exe winnr.'wincmd w'
-"       setlocal scrollbind nowrap nofoldenable
-"       let top = line('w0') + &scrolloff
-"       let current = line('.')
-"       exe 'leftabove vsplit '.temp
+      let temp = tempname().'.fugitiveblame'
+      silent! exe '%write !'.basecmd.' > '.temp.' 2> '.temp
+      if v:shell_error
+        call s:throw(join(readfile(temp),"\n"))
+      endif
+      let bufnr = bufnr('')
+      let restore = 'call setbufvar('.bufnr.',"&scrollbind",0)'
+      if &l:wrap
+        let restore .= '|call setbufvar('.bufnr.',"&wrap",1)'
+      endif
+      if &l:foldenable
+        let restore .= '|call setbufvar('.bufnr.',"&foldenable",1)'
+      endif
+      let winnr = winnr()
+      windo set noscrollbind
+      exe winnr.'wincmd w'
+      setlocal scrollbind nowrap nofoldenable
+      let top = line('w0') + &scrolloff
+      let current = line('.')
+      exe 'leftabove vsplit '.temp
 "       let b:git_dir = git_dir
 "       let b:fugitive_type = 'blame'
 "       let b:fugitive_blamed_bufnr = bufnr
 "       let b:fugitive_restore = restore
 "       call s:Detect()
-"       execute top
-"       normal! zt
-"       execute current
-"       execute "vertical resize ".(match(getline('.'),'\s\+\d\+)')+1)
-"       setlocal nomodified nomodifiable nonumber scrollbind nowrap foldcolumn=0 nofoldenable filetype=fugitiveblame
+      execute top
+      normal! zt
+      execute current
+      execute "vertical resize ".(match(getline('.'),'\s\+\d\+)')+1)
+      setlocal nomodified nomodifiable nonumber scrollbind nowrap foldcolumn=0 nofoldenable filetype=fugitiveblame
 "       nnoremap <buffer> <silent> q    :bdelete<CR>
 "       nnoremap <buffer> <silent> <CR> :exe <SID>BlameJump()<CR>
 "       nnoremap <buffer> <silent> o    :<C-U>exe <SID>Edit((&splitbelow ? "botright" : "topleft")." split", matchstr(getline('.'),'\x\+'))<CR>
 "       nnoremap <buffer> <silent> O    :<C-U>exe <SID>Edit("tabedit", matchstr(getline('.'),'\x\+'))<CR>
 "       syncbind
 "     endif
-"     return ''
+    return ''
 "   catch /^fugitive:/
 "     return 'echoerr v:errmsg'
 "   endtry
-" endfunction
+endfunction
 
 " function! s:BlameJump() abort
 "   let commit = matchstr(getline('.'),'^\^\=\zs\x\+')
